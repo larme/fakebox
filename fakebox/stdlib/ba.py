@@ -2,16 +2,74 @@ import numpy as np
 from fakebox.dsp import DSPObj, DSPZero
 
 
-class Dummy(DSPObj):
+class Bypass(DSPObj):
 
-    def __init__(self, in_n, out_n):
+    def __init__(self, n=1):
 
-        self.in_n = in_n
-        self.out_n = out_n
+        self.in_n = n
+        self.out_n = n
         super().__init__()
 
     def _tick(self, ins):
-        return DSPZero
+        return ins
+
+class Const(DSPObj):
+
+    def __init__(self, c):
+
+        self.in_n = 0
+        self.out_n = 1
+        self.c = c
+        super().__init__()
+
+    def _tick(self, ins):
+        return self.c
+
+
+class Parameter(DSPObj):
+
+    def __init__(self, preset, ptr):
+
+        self.in_n = 0
+        self.out_n = 1
+
+        self.preset = preset
+        self.ptr = ptr
+
+        super().__init__()
+
+    def _tick(self, ins):
+        return self.preset[self.ptr]
+
+class Dummy(DSPObj):
+
+    def __init__(self, in_n, out_n=None, outs=None):
+
+        assert(out_n or outs)
+
+        if outs:
+            try:
+                iter(outs)
+            except TypeError:
+                outs = (outs, )
+
+        if out_n:
+            if outs:
+                assert(out_n == len(outs))
+            else:
+                outs = DSPZero
+        else:
+            out_n = len(outs)
+
+        self.outs = outs
+
+        self.in_n = in_n
+        self.out_n = out_n
+        self.outs = outs
+        super().__init__()
+
+    def _tick(self, ins):
+        return self.outs
 
 
 class Dup(DSPObj):
@@ -32,11 +90,16 @@ class Router(DSPObj):
 
     def __init__(self, ins2outs, in_n=None, out_n=None):
 
+        try:
+            ins2outs.keys()
+        except AttributeError:
+            ins2outs = {in_: out for out, in_ in enumerate(ins2outs)}
+
         if not in_n:
-            in_n = max(ins2outs.keys())
+            in_n = max(ins2outs.keys()) + 1
 
         if not out_n:
-            out_n = max(ins2outs.values)
+            out_n = max(ins2outs.values()) + 1
 
         zero_outlets = set()
 
@@ -47,7 +110,7 @@ class Router(DSPObj):
 
     def _tick(self, ins):
 
-        outs_d = {out: ins[in_] for in_, out in ins2outs.items()}
+        outs_d = {out: ins[in_] for in_, out in self.ins2outs.items()}
         outs = [outs_d.get(o, DSPZero) for o in range(self.out_n)]
         return outs
 
@@ -95,7 +158,7 @@ class Stack(DSPObj):
 
         self.in_n = sum(obj.in_n for obj in objs)
         self.out_n = sum(obj.out_n for obj in objs)
-
+        self.objs = objs
         super().__init__()
 
     def _tick(self, ins):
