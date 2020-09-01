@@ -6,6 +6,7 @@ from fakebox.conf import DEFAULT_SAMPLE_RATE, DEFAULT_BIT_N
 
 DSPFloat = np.float64
 DSPZero = DSPFloat(0.0)
+DSPOne = DSPFloat(1.0)
 DSPOne_L = DSPFloat(1.0 - 1e-8)
 
 class DSPContext(object):
