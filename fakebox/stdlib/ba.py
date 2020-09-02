@@ -13,6 +13,7 @@ class Bypass(DSPObj):
     def _tick(self, ins):
         return ins
 
+
 class Const(DSPObj):
 
     def __init__(self, c):
@@ -40,6 +41,7 @@ class Parameter(DSPObj):
 
     def _tick(self, ins):
         return self.preset[self.ptr]
+
 
 class Dummy(DSPObj):
 
@@ -115,6 +117,29 @@ class Router(DSPObj):
         return outs
 
 
+class Mixer(DSPZero):
+
+    def __init__(self, weights=None, in_n=None):
+
+        assert(weights or in_n)
+
+        if weights:
+            in_n = len(weights)
+        else:
+            weights = [1.0 for i in range(in_n)]
+
+        self.in_n = in_n
+        self.out_n = 1
+        self.weights = weights
+        super().__init__()
+
+    def _tick(self, ins):
+
+        pairs = zip(ins, self.weights)
+        out = sum(v * weight for v, weight in pairs)
+        return out
+
+
 class Pipe(DSPObj):
 
     def __init__(self, objs):
@@ -181,43 +206,21 @@ class Stack(DSPObj):
         return outs
 
 
-def Sum(DSPObj):
+def partial(func, args, router=None):
 
-    def __init__(self, c=None, in_n=None):
+    assert(args)
+    func_in_n = func.in_n
+    args_out_n = sum(arg.out_n for arg in args)
+    assert(func_in_n > args_out_n)
 
-        if not in_n:
-            if c:
-                in_n = 1
-            else:
-                in_n = 2
+    bypass_n = func_in_n - args_out_n
+    bypass = Bypass(n=bypass_n)
+    objs = args + [bypass]
+    stack = Stack(objs)
 
-        self.in_n = in_n
-        self.out_n = 1
-        self.c = DSPZero if c is None
+    if router:
+        seqs = [stack, router, func]
+    else:
+        seqs = [stack, func]
 
-        super().__init__()
-
-    def _tick(self, ins):
-        res = np.sum(ins, initial=self.c)
-        return res
-
-
-def Mul(DSPObj):
-
-    def __init__(self, c=None, in_n=None):
-
-        if not in_n:
-            if c:
-                in_n = 1
-            else:
-                in_n = 2
-
-        self.in_n = in_n
-        self.out_n = 1
-        self.c = DSPOne if c is None
-
-        super().__init__()
-
-    def _tick(self, ins):
-        res = np.prod(ins, initial=self.c)
-        return res
+    return Pipe(seqs)

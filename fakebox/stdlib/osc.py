@@ -1,7 +1,7 @@
 import numpy as np
 
 from fakebox.dsp import DSPObj, DSPFloat, DSPZero
-from fakebox.stdlib.ba import Pipe, Router, Const, Stack, Bypass
+from fakebox.stdlib.ba import Pipe, Router, Const, partial
 
 
 class Phasor(DSPObj):
@@ -15,9 +15,9 @@ class Phasor(DSPObj):
 
     def _tick(self, ins):
         freq = ins[0]
-        freq_mod = ins[1]
-        reset_phase_gate = ins[2]
-        init_phase = ins[3]
+        init_phase = ins[1]
+        freq_mod = ins[2]
+        reset_phase_gate = ins[3]
 
         if reset_phase_gate > 0:
             self.reset_phase(init_phase)
@@ -61,19 +61,13 @@ def make_simple_phasor(freq, init_phase=0.0):
 
     freq = Const(freq)
     init_phase = Const(init_phase)
-
-    # 0 freq | 1 init_phase | 2 freq mode in | 3 phase reset in
-    stack = Stack([freq, init_phase, Bypass(2)])
-
-    print("stack", stack.in_n, stack.out_n)
-
-    # 0 freq | 1 freq mod in | 2 phase reset in | 3 init phase
-    router = Router([0, 2, 3, 1])
-
-    print("router", router.in_n, router.out_n)
     phasor = Phasor()
 
-    return Pipe([stack, router, phasor])
+    # 0 freq | 1 init_phase | 2 freq mode in | 3 phase reset in
+    # => 0 freq mode in | 1 phase reset in
+    simple_phasor = partial(phasor, [freq, init_phase])
+
+    return simple_phasor
 
 
 def make_simple_sinosc(freq, init_phase=0.0):
