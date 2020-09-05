@@ -13,7 +13,7 @@ def Sum(DSPObj):
 
         self.in_n = in_n
         self.out_n = 1
-        self.c = DSPZero if c is None
+        self.c = DSPZero if c is None else c
 
         super().__init__()
 
@@ -34,7 +34,7 @@ def Mul(DSPObj):
 
         self.in_n = in_n
         self.out_n = 1
-        self.c = DSPOne if c is None
+        self.c = DSPOne if c is None else c
 
         super().__init__()
 

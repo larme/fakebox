@@ -117,7 +117,7 @@ class Router(DSPObj):
         return outs
 
 
-class Mixer(DSPZero):
+class Mixer(DSPObj):
 
     def __init__(self, weights=None, in_n=None):
 

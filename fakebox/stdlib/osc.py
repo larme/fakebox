@@ -28,7 +28,7 @@ class Phasor(DSPObj):
         inc_per_sample = freq / self.sample_rate
         raw_phase = current_phase + inc_per_sample
         self.phase = raw_phase % 1
-        return current_phase
+        return self.phase
 
     def reset_phase(self, init_phase):
         self.phase = init_phase
