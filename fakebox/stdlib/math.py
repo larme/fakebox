@@ -1,7 +1,7 @@
 import numpy as np
 from fakebox.dsp import DSPObj, DSPZero, DSPOne
 
-def Sum(DSPObj):
+class Sum(DSPObj):
 
     def __init__(self, c=None, in_n=None):
 
@@ -22,7 +22,7 @@ def Sum(DSPObj):
         return res
 
 
-def Mul(DSPObj):
+class Mul(DSPObj):
 
     def __init__(self, c=None, in_n=None):
 
@@ -43,7 +43,7 @@ def Mul(DSPObj):
         return res
 
 
-def Neg(DSPObj):
+class Neg(DSPObj):
 
     def __init__(self):
 
