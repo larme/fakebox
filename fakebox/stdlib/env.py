@@ -1,4 +1,4 @@
-from fakebox.dsp import DSPObj, DSPZero, DSPEpislon
+from fakebox.dsp import DSPObj, DSPZero, DSPEpsilon
 
 class LineSegs(DSPObj):
 
@@ -34,7 +34,7 @@ class LineSegs(DSPObj):
             time_points.append(time_points[-1] + dur)
 
 
-        if running_time > time_points[-1] - DSPEpislon:
+        if running_time > time_points[-1] - DSPEpsilon:
             self.running = False
             return DSPZero
 

@@ -5,10 +5,10 @@ import numpy as np
 from fakebox.conf import DEFAULT_SAMPLE_RATE, DEFAULT_BIT_N
 
 DSPFloat = np.float64
-DSPEpislon = DSPFloat(1e-8)
+DSPEpsilon = DSPFloat(1e-8)
 DSPZero = DSPFloat(0.0)
 DSPOne = DSPFloat(1.0)
-DSPOne_L = DSPFloat(1.0) - DSPEpislon
+DSPOne_L = DSPFloat(1.0) - DSPEpsilon
 
 class DSPContext(object):
 
