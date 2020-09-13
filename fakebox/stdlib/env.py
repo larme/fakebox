@@ -56,8 +56,9 @@ class LineSegs(DSPObj):
         current_amp = self.amp
 
         # seg_n - 1 amps, the beginning and ending amp is 0.0
+        amp_factor = ins[0]
         next_amps = ins[self.seg_n + 1:-1]
-        amps = [DSPZero] + list(next_amps) + [DSPZero]
+        amps = [DSPZero] + [a * amp_factor for a in next_amps] + [DSPZero]
         amp_pairs = list(zip(amps[:-1], amps[1:]))
         pair = amp_pairs[current_seg_idx]
         target_amp = pair[1]
@@ -66,5 +67,4 @@ class LineSegs(DSPObj):
         amp_inc_per_sample = amp_diff / sample_diff
         self.amp = current_amp + amp_inc_per_sample
 
-        amp_factor = ins[0]
-        return self.amp * amp_factor
+        return self.amp
