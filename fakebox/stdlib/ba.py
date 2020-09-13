@@ -166,14 +166,12 @@ class Pipe(DSPObj):
 
         objs = self.objs
 
-        for i in range(len(ins)):
-            objs[0].in_buffer[i] = ins[i]
+        objs[0].in_buffer[:] = ins
 
         for idx, obj in enumerate(objs[:-1]):
             next_obj = objs[idx + 1]
             obj.tick()
-            for i in range(len(obj.out_buffer)):
-                next_obj.in_buffer[i] = obj.out_buffer[i]
+            next_obj.in_buffer[:] = obj.out_buffer
 
         last_obj = objs[-1]
         last_obj.tick()
@@ -194,20 +192,21 @@ class Stack(DSPObj):
 
     def _tick(self, ins):
 
-        objs = self.objs
-
         # copy input to objs' input
 
         in_idx = 0
-        outs = []
+        out_idx = 0
+        outs = np.zeros(self.out_n)
 
-        for obj in objs:
-            for i in range(obj.in_n):
-                obj.in_buffer[i] = ins[in_idx]
-                in_idx += 1
+        for obj in self.objs:
+
+            obj.in_buffer[:] = ins[in_idx:in_idx+obj.in_n]
+            in_idx += obj.in_n
 
             obj.tick()
-            outs.extend(obj.out_buffer)
+
+            outs[out_idx:out_idx+obj.out_n] = obj.out_buffer
+            out_idx += obj.out_n
 
         return outs
 
