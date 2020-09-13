@@ -26,6 +26,9 @@ class Const(DSPObj):
     def _tick(self, ins):
         return self.c
 
+    def get_value(self):
+        return self.c
+
 
 class Parameter(DSPObj):
 
@@ -40,6 +43,9 @@ class Parameter(DSPObj):
         super().__init__()
 
     def _tick(self, ins):
+        return self.preset[self.ptr]
+
+    def get_value(self):
         return self.preset[self.ptr]
 
 
@@ -76,7 +82,7 @@ class Dummy(DSPObj):
 
 class Dup(DSPObj):
 
-    def __init__(self, in_n, factor):
+    def __init__(self, in_n=1, factor=2):
 
         self.in_n = in_n
         self.out_n = in_n * factor
@@ -211,7 +217,7 @@ def partial(func, args, router=None):
     assert(args)
     func_in_n = func.in_n
     args_out_n = sum(arg.out_n for arg in args)
-    assert(func_in_n > args_out_n)
+    assert(func_in_n >= args_out_n)
 
     bypass_n = func_in_n - args_out_n
     bypass = Bypass(n=bypass_n)
