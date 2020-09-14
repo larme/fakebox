@@ -26,13 +26,14 @@ ctx = DSPContext()
 
 class DSPObj(abc.ABC):
 
-    def __init__(self):
+    def __init__(self, name=None):
 
         try:
             self.in_n + self.out_n
         except AttributeError:
             raise NotImplementedError
 
+        self.name = name
         self._ctx = ctx
         self.counter = 0
         self.in_buffer = np.zeros(self.in_n, dtype=DSPFloat)
@@ -43,6 +44,9 @@ class DSPObj(abc.ABC):
         self.in_buffer = np.zeros(self.in_n, dtype=DSPFloat)
         self.out_buffer = np.zeros(self.out_n, dtype=DSPFloat)
 
+    def inc_counter(self):
+        self.counter += 1
+
     @abc.abstractmethod
     def _tick(self, ins):
         raise NotImplementedError
@@ -51,7 +55,7 @@ class DSPObj(abc.ABC):
         outs = self._tick(self.in_buffer)
         self.out_buffer[:] = outs
         self.in_buffer[:] = DSPZero
-        self.counter += 1
+        self.inc_counter()
 
     @property
     def sample_rate(self):
@@ -61,3 +65,9 @@ class DSPObj(abc.ABC):
     def bit_n(self):
         return self._ctx.bit_n
 
+
+    def __repr__(self):
+        prefix = ''
+        if self.name:
+            prefix = self.name + ' '
+        return prefix + super().__repr__()

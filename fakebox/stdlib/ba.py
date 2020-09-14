@@ -4,11 +4,11 @@ from fakebox.dsp import DSPObj, DSPZero, DSPOne
 
 class Bypass(DSPObj):
 
-    def __init__(self, n=1):
+    def __init__(self, n=1, **kwargs):
 
         self.in_n = n
         self.out_n = n
-        super().__init__()
+        super().__init__(**kwargs)
 
     def _tick(self, ins):
         return ins
@@ -24,7 +24,7 @@ class Const(DSPObj):
         super().__init__()
 
     def _tick(self, ins):
-        return self.c
+        return [self.c]
 
     def get_value(self):
         return self.c
@@ -43,7 +43,7 @@ class Parameter(DSPObj):
         super().__init__()
 
     def _tick(self, ins):
-        return self.preset[self.ptr]
+        return self.preset[self.ptr:self.ptr+1]
 
     def get_value(self):
         return self.preset[self.ptr]
@@ -65,7 +65,7 @@ class Dummy(DSPObj):
             if outs:
                 assert(out_n == len(outs))
             else:
-                outs = DSPZero
+                outs = np.zeros(out_n)
         else:
             out_n = len(outs)
 
@@ -143,12 +143,12 @@ class Mixer(DSPObj):
 
         pairs = zip(ins, self.weights)
         out = sum(v * weight for v, weight in pairs)
-        return out
+        return [out]
 
 
 class Pipe(DSPObj):
 
-    def __init__(self, objs):
+    def __init__(self, objs, unsafe=True, **kwargs):
 
         assert(objs)
 
@@ -157,12 +157,18 @@ class Pipe(DSPObj):
             assert(obj.out_n == next_obj.in_n)
 
         self.objs = objs
+        self.unsafe = unsafe
         self.in_n = self.objs[0].in_n
         self.out_n = self.objs[-1].out_n
 
-        super().__init__()
+        super().__init__(**kwargs)
 
-    def _tick(self, ins):
+    def __repr__(self):
+        this_repr = super().__repr__()
+        objs_repr = str([repr(obj) for obj in self.objs])
+        return this_repr + ' with objs: ' + objs_repr
+
+    def _tick_safe(self, ins):
 
         objs = self.objs
 
@@ -178,19 +184,41 @@ class Pipe(DSPObj):
         
         return np.copy(last_obj.out_buffer)
 
+    def _tick_unsafe(self, ins):
+
+        objs = self.objs
+
+        for obj in objs:
+            ins = obj._tick(ins)
+            obj.inc_counter()
+
+        return ins
+
+    def _tick(self, ins):
+        if self.unsafe:
+            return self._tick_unsafe(ins)
+        else:
+            return self._tick_safe(ins)
+
 
 class Stack(DSPObj):
 
-    def __init__(self, objs):
+    def __init__(self, objs, unsafe=True, **kwargs):
 
         assert(objs)
 
         self.in_n = sum(obj.in_n for obj in objs)
         self.out_n = sum(obj.out_n for obj in objs)
         self.objs = objs
-        super().__init__()
+        self.unsafe = unsafe
+        super().__init__(**kwargs)
 
-    def _tick(self, ins):
+    def __repr__(self):
+        this_repr = super().__repr__()
+        objs_repr = str([repr(obj) for obj in self.objs])
+        return this_repr + ' with objs: ' + objs_repr
+
+    def _tick_safe(self, ins):
 
         # copy input to objs' input
 
@@ -209,6 +237,24 @@ class Stack(DSPObj):
             out_idx += obj.out_n
 
         return outs
+
+    def _tick_unsafe(self, ins):
+
+        l = []
+        in_idx = 0
+        for obj in self.objs:
+            out = obj._tick(ins[in_idx:in_idx+obj.in_n])
+            obj.inc_counter()
+            in_idx += obj.in_n
+            l.append(out)
+        outs = np.concatenate(l)
+        return outs
+
+    def _tick(self, ins):
+        if self.unsafe:
+            return self._tick_unsafe(ins)
+        else:
+            return self._tick_safe(ins)
 
 
 def partial(func, args, router=None):
@@ -229,3 +275,54 @@ def partial(func, args, router=None):
         seqs = [stack, func]
 
     return Pipe(seqs)
+
+
+class RecursiveIn(DSPObj):
+
+    def __init__(self, in_n, buff, bypass=True):
+
+        assert(in_n == len(buff))
+
+        self.in_n = in_n
+
+        if bypass:
+            self.out_n = in_n
+        else:
+            self.out_n = 0
+
+        self.buff = buff
+        self.bypass = bypass
+
+        super().__init__()
+
+    def _tick(self, ins):
+        self.buff[:] = ins
+
+        if self.bypass:
+            return ins
+        else:
+            return DSPZero
+
+
+class RecursiveOut(DSPObj):
+
+    def __init__(self, out_n, buff):
+
+        assert(out_n == len(buff))
+
+        self.in_n = 0
+        self.out_n = out_n
+        self.buff = buff
+
+        super().__init__()
+
+    def _tick(self, ins):
+        return self.buff
+
+
+def make_recursive_pair(io_n, bypass=True):
+
+    buff = np.zeros(io_n)
+    rin = RecursiveIn(io_n, buff, bypass=bypass)
+    rout = RecursiveOut(io_n, buff)
+    return rout, rin

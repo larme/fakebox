@@ -26,7 +26,7 @@ class Phasor(DSPObj):
         inc_per_sample = freq / self.sample_rate
         raw_phase = current_phase + inc_per_sample
         self.phase = raw_phase % 1
-        return self.phase
+        return [self.phase]
 
     def reset_phase(self, init_phase):
         self.phase = init_phase
@@ -44,7 +44,8 @@ class Sin(DSPObj):
 
     def _tick(self, ins):
         phase = ins[0]
-        return np.sin(2 * np.pi * phase)
+        out = np.sin(2 * np.pi * phase)
+        return [out]
 
 
 def make_sinosc():

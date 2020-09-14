@@ -19,12 +19,12 @@ class Sum(DSPObj):
 
     def _tick(self, ins):
         res = np.sum(ins, initial=self.c)
-        return res
+        return [res]
 
 
 class Mul(DSPObj):
 
-    def __init__(self, c=None, in_n=None):
+    def __init__(self, c=None, in_n=None, **kwargs):
 
         if not in_n:
             if c:
@@ -36,11 +36,11 @@ class Mul(DSPObj):
         self.out_n = 1
         self.c = DSPOne if c is None else c
 
-        super().__init__()
+        super().__init__(**kwargs)
 
     def _tick(self, ins):
         res = np.prod(ins, initial=self.c)
-        return res
+        return [res]
 
 
 class Neg(DSPObj):
@@ -53,4 +53,5 @@ class Neg(DSPObj):
         super().__init__()
 
     def _tick(self, ins):
-        return np.negative(ins)
+        res = np.negative(ins)
+        return [res]

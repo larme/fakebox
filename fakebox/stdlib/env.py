@@ -1,3 +1,4 @@
+import numpy as np
 from fakebox.dsp import DSPObj, DSPZero, DSPEpsilon
 
 class LineSegs(DSPObj):
@@ -22,7 +23,7 @@ class LineSegs(DSPObj):
             self.counter = 0
 
         if self.running == False:
-            return DSPZero
+            return [DSPZero]
 
         # time in ms
         running_time = 1000.0 * self.counter / self.sample_rate
@@ -36,7 +37,7 @@ class LineSegs(DSPObj):
 
         if running_time > time_points[-1] - DSPEpsilon:
             self.running = False
-            return DSPZero
+            return [DSPZero]
 
         tp_pairs = list(zip(time_points[:-1], time_points[1:]))
 
@@ -67,4 +68,4 @@ class LineSegs(DSPObj):
         amp_inc_per_sample = amp_diff / sample_diff
         self.amp = current_amp + amp_inc_per_sample
 
-        return self.amp
+        return [self.amp]
