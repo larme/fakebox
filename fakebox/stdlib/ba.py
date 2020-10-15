@@ -48,6 +48,9 @@ class Parameter(DSPObj):
     def get_value(self):
         return self.preset[self.ptr]
 
+    def set_value(self, v):
+        self.preset[self.ptr] = v
+
 
 class Dummy(DSPObj):
 
